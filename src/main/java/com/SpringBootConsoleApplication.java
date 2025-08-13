@@ -12,9 +12,9 @@ public class SpringBootConsoleApplication implements CommandLineRunner {
     private static Logger LOG = LoggerFactory.getLogger(SpringBootConsoleApplication.class);
 
     public static void main(String[] args) {
-        LOG.info("STARTING THE [API-GATEWAY]");
+        LOG.info("STARTING THE [PAYMENT-SERVICE]");
         SpringApplication.run(SpringBootConsoleApplication.class, args);
-        LOG.info("[API-GATEWAY] FINISHED STARTING UP");
+        LOG.info("[PAYMENT-SERVICE] FINISHED STARTING UP");
     }
 
     @Override

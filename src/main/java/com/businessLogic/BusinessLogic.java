@@ -3,11 +3,13 @@ package com.businessLogic;
 import java.util.HashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import com.topics.*;
+import com.topics.PaymentResponse.Status;
 import com.postgres.PostgresService;
 import com.postgres.models.Payment;
 /*
@@ -41,7 +43,7 @@ public class BusinessLogic {
     */
     public void mapTopicsToClient() {
         restRouter.put("PaymentResponse", apiGatewayClient);
-        restEndpoints.put(apiGatewayClient, "http://api-gateway:8081");
+        restEndpoints.put(apiGatewayClient, "http://api-gateway:8081/api/v1/processTopic");
         LOG.info("Sucessfully mapped the topics to their respective microservices...");
     }
 
@@ -54,11 +56,34 @@ public class BusinessLogic {
         // Payment(Double paymentAmount, String email, String creditCard, String cvc)
         Payment payment = new Payment(paymentRequest.getPaymentAmount(), paymentRequest.getEmail(),
                 paymentRequest.getCreditCard(), paymentRequest.getCvc());
-
+        
         Payment postgresSaveResponse = postgresService.save(payment);
-        LOG.info("PaymentRequest processed with status: " + postgresSaveResponse.getId() != null ? "Success" : "Failure");
+        Status paymentStatus = postgresSaveResponse.getId() != null ? Status.SUCCESSFUL : Status.FAILED;
+        LOG.info("PaymentRequest processed with status: " + paymentStatus);
+        PaymentResponse paymentResponse = createPaymentResponse(paymentRequest, paymentStatus);
+
+        restRouter.get("PaymentResponse")
+            .post()
+            .uri(restEndpoints.get(restRouter.get("PaymentResponse")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(paymentResponse)
+            .retrieve()
+            .toBodilessEntity();
+
         return postgresSaveResponse.getId() != null ? ResponseEntity.ok("Entity was created/updated successully") :
                 ResponseEntity.status(500).body("Inernal Error Failed to process PaymentRequest");
+    }
+
+    private PaymentResponse createPaymentResponse(PaymentRequest paymentRequest, Status paymentStatus) {
+        LOG.info("Creating a PaymentResponse... with status: " + paymentStatus);
+        PaymentResponse paymentResponse = new PaymentResponse();
+        paymentResponse.setTopicName("PaymentResponse");
+        paymentResponse.setPaymentAmount(paymentRequest.getPaymentAmount());
+        paymentResponse.setEmail(paymentRequest.getEmail());
+        paymentResponse.setCreditCard(paymentRequest.getCreditCard()); 
+        paymentResponse.setCorrelatorId(paymentRequest.getCorrelatorId());
+        paymentResponse.setStatus(paymentStatus);
+        return paymentResponse;
     }
 
 }

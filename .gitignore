@@ -26,3 +26,5 @@ spring.log
 
 # Generated jar files
 *.jar
+
+kafka_data/

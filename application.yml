@@ -1,0 +1,5 @@
+akhq:
+  connections:
+    bryzn-kafka-topics:
+      properties:
+        bootstrap.servers: "kafka:9092"
