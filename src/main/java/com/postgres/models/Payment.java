@@ -9,19 +9,18 @@ import java.time.LocalDateTime;
 
 @Entity
 public class Payment {
-	@Id
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-	private Double paymentAmount;
+    private Double paymentAmount;
     private String email;
     private String creditCard;
     private String cvc;
     private String timeStamp;
 
-	// for JPA only, no use
-	public Payment() {
-	}
+    // for JPA only, no use
+    public Payment() {}
 
     public Payment(Double paymentAmount, String email, String creditCard, String cvc) {
         this.paymentAmount = paymentAmount;
@@ -34,6 +33,7 @@ public class Payment {
     public Long getId() {
         return id;
     }
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -41,6 +41,7 @@ public class Payment {
     public Double getPaymentAmount() {
         return paymentAmount;
     }
+
     public void setPaymentAmount(Double paymentAmount) {
         this.paymentAmount = paymentAmount;
     }
@@ -48,6 +49,7 @@ public class Payment {
     public String getEmail() {
         return email;
     }
+
     public void setEmail(String email) {
         this.email = email;
     }
@@ -55,6 +57,7 @@ public class Payment {
     public String getCreditCard() {
         return creditCard;
     }
+
     public void setCreditCard(String creditCard) {
         this.creditCard = creditCard;
     }
@@ -62,6 +65,7 @@ public class Payment {
     public String getCvc() {
         return cvc;
     }
+
     public void setCvc(String cvc) {
         this.cvc = cvc;
     }
@@ -69,6 +73,7 @@ public class Payment {
     public String getTimeStamp() {
         return timeStamp;
     }
+
     public void setTimeStamp(String timeStamp) {
         this.timeStamp = timeStamp;
     }

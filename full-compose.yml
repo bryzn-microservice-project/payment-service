@@ -137,6 +137,27 @@ services:
       - ./src/main/resources/application.properties:/app/config/application.properties
     ports:
       - "8084:8084"
+  
+  seating-service:
+    image: ss
+    container_name: seating-service
+    environment:
+      SERVER_PORT: 8085
+      SPRING_CONFIG_LOCATION: file:/app/config/
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bryzndb
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: password
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: true
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./src/main/resources/application.properties:/app/config/application.properties
+    ports:
+      - "8085:8085"
 
 volumes:
   pgdata:
