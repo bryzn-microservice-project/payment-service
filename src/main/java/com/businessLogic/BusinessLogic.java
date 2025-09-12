@@ -1,14 +1,11 @@
 package com.businessLogic;
 
-import java.util.HashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
-
-import com.topics.*;
+import com.topics.PaymentRequest;
+import com.topics.PaymentResponse;
 import com.topics.PaymentResponse.Status;
 import com.postgres.PostgresService;
 import com.postgres.models.Payment;
@@ -19,32 +16,12 @@ import com.postgres.models.Payment;
 @Service
 public class BusinessLogic {
     private static final Logger LOG = LoggerFactory.getLogger(BusinessLogic.class);
-    public final PostgresService postgresService;
+    private final PostgresService postgresService;
+    private final AsyncLogic asyncLogic;
 
-    // REST Clients to communicate with other microservices
-    private RestClient apiGatewayClient = RestClient.create();
-
-    private HashMap<String, RestClient> restRouter = new HashMap<>();
-    private HashMap<RestClient, String> restEndpoints = new HashMap<>();
-
-    public BusinessLogic(PostgresService postgresService) {
+    public BusinessLogic(PostgresService postgresService, AsyncLogic asyncLogic) {
         this.postgresService = postgresService;
-        mapTopicsToClient();
-    }
-
-    /* Method to map topics to their respective microservices and endpoints
-        # api-gateway:8081
-        # movie-service:8082
-        # notification-service:8083
-        # payment-service:8084
-        # seating-service:8085
-        # user-management-service:8086
-        # gui-service:8087 
-    */
-    public void mapTopicsToClient() {
-        restRouter.put("PaymentResponse", apiGatewayClient);
-        restEndpoints.put(apiGatewayClient, "http://api-gateway:8081/api/v1/processTopic");
-        LOG.info("Sucessfully mapped the topics to their respective microservices...");
+        this.asyncLogic = asyncLogic;
     }
 
     /*
@@ -62,15 +39,10 @@ public class BusinessLogic {
         LOG.info("PaymentRequest processed with status: " + paymentStatus);
         PaymentResponse paymentResponse = createPaymentResponse(paymentRequest, paymentStatus);
 
-        restRouter.get("PaymentResponse")
-            .post()
-            .uri(restEndpoints.get(restRouter.get("PaymentResponse")))
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(paymentResponse)
-            .retrieve()
-            .toBodilessEntity();
+        // send async work before returning
+        asyncLogic.handleRewards(paymentRequest);
 
-        return postgresSaveResponse.getId() != null ? ResponseEntity.ok("Entity was created/updated successully") :
+        return postgresSaveResponse.getId() != null ? ResponseEntity.ok(paymentResponse.toString()) :
                 ResponseEntity.status(500).body("Inernal Error Failed to process PaymentRequest");
     }
 
