@@ -1,5 +1,6 @@
 package com.businessLogic;
 
+import java.math.BigDecimal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -7,6 +8,7 @@ import org.springframework.stereotype.Service;
 import com.topics.PaymentRequest;
 import com.topics.PaymentResponse;
 import com.topics.PaymentResponse.Status;
+import jakarta.transaction.Transactional;
 import com.postgres.PostgresService;
 import com.postgres.models.Payment;
 /*
@@ -27,16 +29,17 @@ public class BusinessLogic {
     /*
      * Request handlers for the various topics, which communicate through REST clients
      */
+    @Transactional
     public ResponseEntity<String> processPaymentRequest(PaymentRequest paymentRequest) {
-        LOG.info("Received a PaymentRequest. Sending the topic to the [Payment Service]");
+        LOG.info("Received a PaymentRequest, posting record into the database...");
 
         // Payment(Double paymentAmount, String email, String creditCard, String cvc)
-        Payment payment = new Payment(paymentRequest.getPaymentAmount(), paymentRequest.getEmail(),
+        Payment payment = new Payment(BigDecimal.valueOf(paymentRequest.getPaymentAmount()), paymentRequest.getEmail(),
                 paymentRequest.getCreditCard(), paymentRequest.getCvc());
-        
+
         Payment postgresSaveResponse = postgresService.save(payment);
         Status paymentStatus = postgresSaveResponse.getId() != null ? Status.SUCCESSFUL : Status.FAILED;
-        LOG.info("PaymentRequest processed with status: " + paymentStatus);
+        LOG.info("PaymentRequest processed with status: " + paymentStatus + " ID: " + postgresSaveResponse.getId());
         PaymentResponse paymentResponse = createPaymentResponse(paymentRequest, paymentStatus);
 
         // send async work before returning

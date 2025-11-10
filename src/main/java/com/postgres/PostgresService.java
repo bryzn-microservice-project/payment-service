@@ -3,6 +3,7 @@ package com.postgres;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.postgres.models.Payment;
+import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,6 +22,7 @@ public class PostgresService {
     }
 
     // save includes creating and updating
+    @Transactional
     public Payment save(Payment payment) {
         return paymentRepository.save(payment);
     }

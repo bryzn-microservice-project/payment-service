@@ -1,33 +1,45 @@
 package com.postgres.models;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-
+import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "payments", schema = "payment_service")
 public class Payment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Double paymentAmount;
+    @Column(name = "payment_amount", nullable = false)
+    private BigDecimal paymentAmount;
+
+    @Column(name = "email", nullable = false)
     private String email;
+
+    @Column(name = "credit_card", nullable = false)
     private String creditCard;
+
+    @Column(name = "cvc", nullable = false)
     private String cvc;
-    private String timeStamp;
+
+    @Column(name = "initial_time_stamp", nullable = false)
+    private String initialTimeStamp;
 
     // for JPA only, no use
     public Payment() {}
 
-    public Payment(Double paymentAmount, String email, String creditCard, String cvc) {
+    public Payment(BigDecimal paymentAmount, String email, String creditCard, String cvc) {
         this.paymentAmount = paymentAmount;
         this.email = email;
         this.creditCard = creditCard;
         this.cvc = cvc;
-        this.timeStamp = LocalDateTime.now().toString();
+        this.initialTimeStamp = LocalDateTime.now().toString();
     }
 
     public Long getId() {
@@ -38,11 +50,11 @@ public class Payment {
         this.id = id;
     }
 
-    public Double getPaymentAmount() {
+    public BigDecimal getPaymentAmount() {
         return paymentAmount;
     }
 
-    public void setPaymentAmount(Double paymentAmount) {
+    public void setPaymentAmount(BigDecimal paymentAmount) {
         this.paymentAmount = paymentAmount;
     }
 
@@ -70,11 +82,11 @@ public class Payment {
         this.cvc = cvc;
     }
 
-    public String getTimeStamp() {
-        return timeStamp;
+    public String getInitialTimeStamp() {
+        return initialTimeStamp;
     }
 
-    public void setTimeStamp(String timeStamp) {
-        this.timeStamp = timeStamp;
+    public void setInitialTimeStamp(String timeStamp) {
+        this.initialTimeStamp = timeStamp;
     }
 }
