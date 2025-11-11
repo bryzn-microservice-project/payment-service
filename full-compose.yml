@@ -97,11 +97,74 @@ services:
   # user-management-service:8086
   # gui-service:8087
 
-  api-gateway:
-    image: apigw
-    container_name: api-gateway
+  user-management-service:
+    image: ums
+    container_name: user-management-service
     environment:
-      - SERVER_PORT=8081
+      SERVER_PORT: 8086
+      
+      # Spring
+      SPRING_PROFILES_ACTIVE: test
+      
+      # Postgres 
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bryzndb
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: password
+
+      # CUSTOM
+      SESSION_MANAGER: session-manager
+      SESSION_MANAGER_PORT: 8090
+      NOTIFICATION_SERVICE: notification-service
+      NOTIFICATION_SERVICE_PORT: 8083
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8086:8086"
+
+  session-manager:
+    image: sm
+    container_name: session-manager
+    environment:
+        SERVER_PORT: 8090
+        SPRING_CONFIG_LOCATION: file:/app/config/
+        SPRING_PROFILES_ACTIVE: dev
+    volumes:
+    - ./config/application.properties:/app/config/application.properties
+    ports:
+      - "8090:8090"
+
+  payment-service:
+    image: ps
+    container_name: payment-service
+    environment:
+      SERVER_PORT: 8084
+      
+      # Spring
+      SPRING_PROFILES_ACTIVE: test
+      
+      # Postgres 
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bryzndb
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: password
+
+      # CUSTOM
+      SESSION_MANAGER: session-manager
+      SESSION_MANAGER_PORT: 8090
+      USER_MANAGEMENT_SERVICE: user-management-service
+      USER_MANAGEMENT_SERVICE_PORT: 8086
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8084:8084"
+  
+  notification-service:
+    image: ns
+    container_name: notification-service
+    environment:
+      - SERVER_PORT=8083
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - SPRING_CONFIG_LOCATION=file:/app/config/
       - SPRING_PROFILES_ACTIVE=dev
@@ -110,54 +173,10 @@ services:
         condition: service_healthy
       kafdrop:
         condition: service_started
-      traefik:
-        condition: service_started
     volumes:
     - ./config/application.properties:/app/config/application.properties
     ports:
-      - "8081:8081"
-
-  payment-service:
-    image: ps
-    container_name: payment-service
-    environment:
-      SERVER_PORT: 8084
-      SPRING_CONFIG_LOCATION: file:/app/config/
-      SPRING_PROFILES_ACTIVE: dev
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bryzndb
-      SPRING_DATASOURCE_USERNAME: user
-      SPRING_DATASOURCE_PASSWORD: password
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      SPRING_JPA_SHOW_SQL: true
-      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
-    depends_on:
-      postgres:
-        condition: service_healthy
-    volumes:
-      - ./src/main/resources/application.properties:/app/config/application.properties
-    ports:
-      - "8084:8084"
-  
-  seating-service:
-    image: ss
-    container_name: seating-service
-    environment:
-      SERVER_PORT: 8085
-      SPRING_CONFIG_LOCATION: file:/app/config/
-      SPRING_PROFILES_ACTIVE: dev
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bryzndb
-      SPRING_DATASOURCE_USERNAME: user
-      SPRING_DATASOURCE_PASSWORD: password
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      SPRING_JPA_SHOW_SQL: true
-      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
-    depends_on:
-      postgres:
-        condition: service_healthy
-    volumes:
-      - ./src/main/resources/application.properties:/app/config/application.properties
-    ports:
-      - "8085:8085"
+      - "8083:8083"
 
 volumes:
   pgdata:

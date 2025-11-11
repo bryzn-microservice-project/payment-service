@@ -3,16 +3,19 @@ package com.businessLogic;
 import java.util.HashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.topics.AccountInfoRequest;
 import com.topics.AccountInfoResponse;
 import com.topics.PaymentRequest;
 import com.topics.RewardsRequest;
 import com.topics.RewardsRequest.Application;
 import com.topics.RewardsResponse;
+import jakarta.annotation.PostConstruct;
 
 @Service
 public class AsyncLogic {
@@ -22,11 +25,32 @@ public class AsyncLogic {
     private RestClient userServiceClient = RestClient.create();
     private RestClient sessionManagerClient = RestClient.create();
 
+    @Value("${user.management.service}")
+    private String userManagementService;
+    @Value("${user.management.service.port}")
+    private String userManagementServicePort;
+    private String ums;
+
+    @Value("${session.manager}")
+    private String sessionManager;
+    @Value("${session.manager.port}")
+    private String sessionManagerPort;
+    private String sm;
+
     private HashMap<String, RestClient> restRouter = new HashMap<>();
     private HashMap<RestClient, String> restEndpoints = new HashMap<>();
 
-    public AsyncLogic() {
-        mapTopicsToClient();
+    @PostConstruct
+    public void init() {
+        sm = "http://" + sessionManager + ":" + sessionManagerPort + "/api/v1/user";
+        restEndpoints.put(sessionManagerClient, sm);
+        LOG.info("AsyncLogic initialized with Session Manager at: " + sm);
+
+        ums = "http://" + userManagementService + ":" + userManagementServicePort + "/api/v1/processTopic";
+        restRouter.put("RewardsRequest", userServiceClient);
+        restRouter.put("AccountInfoRequest", userServiceClient);
+        restEndpoints.put(userServiceClient, ums);
+        LOG.info("AsyncLogic initialized with User Management Service at: " + ums);
     }
 
     /* Method to map topics to their respective microservices and endpoints
@@ -41,14 +65,6 @@ public class AsyncLogic {
      * # service-orchestrator:8089
      * # session-manager:8090   
     */
-    public void mapTopicsToClient() {
-        restRouter.put("RewardsRequest", userServiceClient);
-        restRouter.put("AccountInfoRequest", userServiceClient);
-        restEndpoints.put(userServiceClient, "http://user-management-service:8086/api/v1/processTopic");
-
-        restEndpoints.put(sessionManagerClient, "http://session-manager:8090/api/v1/user");
-        LOG.info("Sucessfully mapped the topics to their respective microservices...");
-    }
 
     // get current logged in user from the session manager
     // then get the account info from the user management service
@@ -56,6 +72,7 @@ public class AsyncLogic {
     @Async 
     public void handleRewards(PaymentRequest paymentRequest) {
         try {
+            ObjectMapper mapper = new ObjectMapper();
             String user = sessionManagerClient.get()
                 .uri(restEndpoints.get(sessionManagerClient))
                 .accept(MediaType.APPLICATION_JSON)
@@ -72,13 +89,19 @@ public class AsyncLogic {
                 accountInfoRequest.setUsername(user);
                 accountInfoRequest.setCorrelatorId(paymentRequest.getCorrelatorId());
 
-                AccountInfoResponse account = userServiceClient.post()
+                String AccountResponse = userServiceClient.post()
                     .uri(restEndpoints.get(restRouter.get("AccountInfoRequest")))
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(accountInfoRequest)
                     .retrieve()
-                    .body(AccountInfoResponse.class);
+                    .body(String.class);
                 LOG.info("Sent an AccountInfoRequest to the User Management Service...");
+                
+                if(AccountResponse == null) {
+                    LOG.warn("AccountInfoResponse is null, cannot proceed with rewards processing.");
+                    return;
+                }
+                AccountInfoResponse account = mapper.readValue(AccountResponse, AccountInfoResponse.class);
 
                 int rewardPoints = account.getRewardPoints();
                 int newPoints = rewardPoints + (int)(paymentRequest.getPaymentAmount() / 10);
@@ -94,14 +117,21 @@ public class AsyncLogic {
                 rewardsRequest.setRewardPoints(newPoints);
                 rewardsRequest.setApplication(Application.REWARD_POINTS_ADDED);
                 
-                RewardsResponse rewardsResponse = userServiceClient
+                String rewardsResponse = userServiceClient
                     .post()
                     .uri(restEndpoints.get(restRouter.get("RewardsRequest")))
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(rewardsRequest)
                     .retrieve()
-                    .body(RewardsResponse.class);
-                LOG.info("Sent a RewardsRequest to the User Management Service... Received response: " + rewardsResponse.getApplication());
+                    .body(String.class);
+
+                RewardsResponse rewardStatus = mapper.readValue(rewardsResponse, RewardsResponse.class);
+
+                if(rewardStatus == null) {
+                    LOG.warn("RewardsResponse is null, rewards processing may have failed.");
+                    return;
+                }
+                LOG.info("Sent a RewardsRequest to the User Management Service... Received response: " + rewardStatus.getApplication());
             } else {
                 LOG.info("No user logged in, skipping sending RewardsRequest and AccountInfoRequest to User Management Service");
             }
