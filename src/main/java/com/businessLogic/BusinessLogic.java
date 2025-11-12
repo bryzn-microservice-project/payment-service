@@ -19,6 +19,7 @@ import com.topics.RewardsResponse;
 import com.topics.RewardsRequest.Application;
 import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.postgres.PostgresService;
 import com.postgres.models.Payment;
@@ -149,7 +150,7 @@ public class BusinessLogic {
         // send async work before returning
         asyncLogic.handleRewards(paymentRequest, discountedAmount);
 
-        return postgresSaveResponse.getId() != null ? ResponseEntity.ok(paymentResponse.toString())
+        return postgresSaveResponse.getId() != null ? ResponseEntity.ok(toJson(paymentResponse))
                 : ResponseEntity.status(500).body("Inernal Error Failed to process PaymentRequest");
     }
 
@@ -166,4 +167,15 @@ public class BusinessLogic {
         return paymentResponse;
     }
 
+    // Helper method to serialize an object to JSON string
+    private String toJson(Object obj) {
+        try {
+            // Use Jackson ObjectMapper to convert the object to JSON
+            ObjectMapper objectMapper = new ObjectMapper();
+            return objectMapper.writeValueAsString(obj);  // Convert object to JSON string
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return "{\"error\":\"Error processing JSON\"}";
+        }
+    }
 }
