@@ -26,3 +26,12 @@ PaymentRequest (good)
   "creditCard": "4111111111111111",
   "cvc": "123"
 }
+
+{
+  "topicName": "PaymentRequest",
+  "correlatorId": 1123,
+  "paymentAmount": 20.00,
+  "email": "bryzntest@gmail.com",
+  "creditCard": "6011000990139424",
+  "cvc": "321"
+}

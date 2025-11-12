@@ -96,6 +96,50 @@ services:
   # seating-service:8085
   # user-management-service:8086
   # gui-service:8087
+  # ticketing-manager:8088
+  # service-orchestrator:8089
+  # session-manager:8090
+
+  api-gateway:
+    image: apigw
+    container_name: api-gateway
+    environment:
+      - SERVER_PORT=8081
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_PROFILES_ACTIVE=dev
+    depends_on:
+      kafka:
+        condition: service_healthy
+      kafdrop:
+        condition: service_started
+      traefik:
+        condition: service_started
+    ports:
+      - "8081:8081"
+  
+  service-orchestrator:
+    image: so
+    container_name: service-orchestrator
+    environment:
+      SERVER_PORT: 8089
+
+      # Spring
+      SPRING_PROFILES_ACTIVE: dev
+
+      # CUSTOM
+      API_GATEWAY: api-gateway
+      API_GATEWAY_PORT: 8081
+      PAYMENT_SERVICE: payment-service
+      PAYMENT_SERVICE_PORT: 8084
+      SEATING_SERVICE: seating-service
+      SEATING_SERVICE_PORT: 8085
+      MOVIE_SERVICE: movie-service
+      MOVIE_SERVICE_PORT: 8082
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8089:8089"
 
   user-management-service:
     image: ums
@@ -135,6 +179,25 @@ services:
     ports:
       - "8090:8090"
 
+  seating-service:
+    image: ss
+    container_name: seating-service
+    environment:
+      SERVER_PORT: 8085
+      
+      # Spring
+      SPRING_PROFILES_ACTIVE: test
+      
+      # Postgres 
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bryzndb
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: password
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8085:8085"
+
   payment-service:
     image: ps
     container_name: payment-service
@@ -160,6 +223,40 @@ services:
     ports:
       - "8084:8084"
   
+  movie-service:
+    image: ms
+    container_name: movie-service
+    environment:
+      SERVER_PORT: 8082
+      
+      # Spring
+      SPRING_PROFILES_ACTIVE: test
+      
+      # Postgres 
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bryzndb
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: password
+
+      # CUSTOM
+      API_GATEWAY: api-gateway
+      API_GATEWAY_PORT: 8081
+      TICKETING_MANAGER: ticketing-manager
+      TICKETING_MANAGER_PORT: 8088
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8082:8082"
+
+  ticketing-manager:
+    image: tm
+    container_name: ticketing-manager
+    environment:
+      - SERVER_PORT=8088
+      - SPRING_PROFILES_ACTIVE=dev
+    ports:
+      - "8088:8088"
+
   notification-service:
     image: ns
     container_name: notification-service

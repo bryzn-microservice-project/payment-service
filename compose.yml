@@ -1,25 +1,4 @@
 services:
-  payment-service:
-    image: ps
-    container_name: payment-service
-    environment:
-      SERVER_PORT: 8084
-      SPRING_CONFIG_LOCATION: file:/app/config/
-      SPRING_PROFILES_ACTIVE: dev
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bryzndb
-      SPRING_DATASOURCE_USERNAME: user
-      SPRING_DATASOURCE_PASSWORD: password
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      SPRING_JPA_SHOW_SQL: true
-      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
-    depends_on:
-      postgres:
-        condition: service_healthy
-    volumes:
-      - ./src/main/resources/application.properties:/app/config/application.properties
-    ports:
-      - "8084:8084"
-
   postgres:
     image: postgres:16
     container_name: postgres
@@ -38,5 +17,78 @@ services:
       timeout: 5s
       retries: 5
 
+  # api-gateway:8081
+  # movie-service:8082
+  # notification-service:8083
+  # payment-service:8084
+  # seating-service:8085
+  # user-management-service:8086
+  # gui-service:8087
+  # ticketing-manager:8088
+  # service-orchestrator:8089
+  # session-manager:8090
+  
+  user-management-service:
+    image: ums
+    container_name: user-management-service
+    environment:
+      SERVER_PORT: 8086
+      
+      # Spring
+      SPRING_PROFILES_ACTIVE: test
+      
+      # Postgres 
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bryzndb
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: password
+
+      # CUSTOM
+      SESSION_MANAGER: session-manager
+      SESSION_MANAGER_PORT: 8090
+      NOTIFICATION_SERVICE: notification-service
+      NOTIFICATION_SERVICE_PORT: 8083
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8086:8086"
+
+  session-manager:
+    image: sm
+    container_name: session-manager
+    environment:
+        SERVER_PORT: 8090
+        SPRING_CONFIG_LOCATION: file:/app/config/
+        SPRING_PROFILES_ACTIVE: dev
+    volumes:
+    - ./config/application.properties:/app/config/application.properties
+    ports:
+      - "8090:8090"
+
+  # payment-service:
+  #   image: ps
+  #   container_name: payment-service
+  #   environment:
+  #     SERVER_PORT: 8084
+      
+  #     # Spring
+  #     SPRING_PROFILES_ACTIVE: test
+      
+  #     # Postgres 
+  #     SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bryzndb
+  #     SPRING_DATASOURCE_USERNAME: user
+  #     SPRING_DATASOURCE_PASSWORD: password
+
+  #     # CUSTOM
+  #     SESSION_MANAGER: session-manager
+  #     SESSION_MANAGER_PORT: 8090
+  #     USER_MANAGEMENT_SERVICE: user-management-service
+  #     USER_MANAGEMENT_SERVICE_PORT: 8086
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   ports:
+  #     - "8084:8084"
 volumes:
   pgdata:

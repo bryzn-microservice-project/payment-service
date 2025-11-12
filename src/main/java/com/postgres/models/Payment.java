@@ -19,6 +19,12 @@ public class Payment {
     @Column(name = "payment_amount", nullable = false)
     private BigDecimal paymentAmount;
 
+    @Column(name = "cash_amount", nullable = false)
+    private BigDecimal cashAmount;
+
+    @Column(name = "reward_cash_applied", nullable = false)
+    private BigDecimal rewardCashApplied;
+
     @Column(name = "email", nullable = false)
     private String email;
 
@@ -34,8 +40,10 @@ public class Payment {
     // for JPA only, no use
     public Payment() {}
 
-    public Payment(BigDecimal paymentAmount, String email, String creditCard, String cvc) {
+    public Payment(BigDecimal paymentAmount, BigDecimal cashAmount, BigDecimal rewardCashApplied, String email, String creditCard, String cvc) {
         this.paymentAmount = paymentAmount;
+        this.cashAmount = cashAmount;
+        this.rewardCashApplied = rewardCashApplied;
         this.email = email;
         this.creditCard = creditCard;
         this.cvc = cvc;
@@ -56,6 +64,22 @@ public class Payment {
 
     public void setPaymentAmount(BigDecimal paymentAmount) {
         this.paymentAmount = paymentAmount;
+    }
+
+    public BigDecimal getCashAmount() {
+        return cashAmount;
+    }
+
+    public void setCashAmount(BigDecimal cashAmount) {
+        this.cashAmount = cashAmount;
+    }
+
+    public BigDecimal getRewardCashApplied() {
+        return rewardCashApplied;
+    }
+
+    public void setRewardCashApplied(BigDecimal rewardCashApplied) {
+        this.rewardCashApplied = rewardCashApplied;
     }
 
     public String getEmail() {

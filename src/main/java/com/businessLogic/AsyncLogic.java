@@ -70,7 +70,9 @@ public class AsyncLogic {
     // then get the account info from the user management service
     // finally send a rewards request to the user management service
     @Async 
-    public void handleRewards(PaymentRequest paymentRequest) {
+    public void handleRewards(PaymentRequest paymentRequest, Double discountedAmount) {
+        System.out.println("\n");
+        LOG.info("ASYNC logic handling new reward points...");
         try {
             ObjectMapper mapper = new ObjectMapper();
             String user = sessionManagerClient.get()
@@ -104,8 +106,14 @@ public class AsyncLogic {
                 AccountInfoResponse account = mapper.readValue(AccountResponse, AccountInfoResponse.class);
 
                 int rewardPoints = account.getRewardPoints();
-                int newPoints = rewardPoints + (int)(paymentRequest.getPaymentAmount() / 10);
-                LOG.info(user + " had " + rewardPoints + " reward points. Adding " + newPoints + " new points.");
+                int newPoints = rewardPoints + (int)(discountedAmount * 10);
+                if(discountedAmount == 0) {
+                    LOG.info(user + " had " + rewardPoints + " reward points. No new points were added because the total was $0.00.");
+                }
+                else
+                {
+                    LOG.info(user + " initially had " + rewardPoints + " reward points. The user now has " + newPoints + " points.");
+                }
                 
                 // send RewardsRequest to user-management-service
                 RewardsRequest rewardsRequest = new RewardsRequest();
