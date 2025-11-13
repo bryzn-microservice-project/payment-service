@@ -83,7 +83,7 @@ public class AsyncLogic {
 
             LOG.info("Session Manager returned user: " + user);
 
-            if(user != null && !user.equals("NO_USER")) {
+            if(user != null && !user.equals("NO-USER")) {
                 // send AccountInfoRequest to user-management-service
                 AccountInfoRequest accountInfoRequest = new AccountInfoRequest();
                 accountInfoRequest.setTopicName("AccountInfoRequest");

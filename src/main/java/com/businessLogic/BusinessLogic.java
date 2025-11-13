@@ -35,7 +35,8 @@ public class BusinessLogic {
     private final AsyncLogic asyncLogic;
 
     // REST Clients to communicate with other microservices
-    private RestClient userServiceClient = RestClient.create();
+    private final RestClient userServiceClient;
+    private HashMap<RestClient, String> restEndpoints = new HashMap<>();
 
     @Value("${user.management.service}")
     private String userManagementService;
@@ -43,29 +44,25 @@ public class BusinessLogic {
     private String userManagementServicePort;
     private String ums;
 
-    private HashMap<String, RestClient> restRouter = new HashMap<>();
-    private HashMap<RestClient, String> restEndpoints = new HashMap<>();
+    public BusinessLogic(PostgresService postgresService, AsyncLogic asyncLogic, RestClient userServiceClient) {
+        this.postgresService = postgresService;
+        this.asyncLogic = asyncLogic;
+        this.userServiceClient = userServiceClient;
+    }
 
     @PostConstruct
     public void init() {
         ums = "http://" + userManagementService + ":" + userManagementServicePort
                 + "/api/v1/processTopic";
-        restRouter.put("RewardsRequest", userServiceClient);
-        restRouter.put("AccountInfoRequest", userServiceClient);
         restEndpoints.put(userServiceClient, ums);
         LOG.info("Business Logic initialized with User Management Service at: " + ums);
-    }
-
-    public BusinessLogic(PostgresService postgresService, AsyncLogic asyncLogic) {
-        this.postgresService = postgresService;
-        this.asyncLogic = asyncLogic;
     }
 
     /*
      * Request handlers for the various topics, which communicate through REST clients
      */
     @Transactional
-    public ResponseEntity<String> processPaymentRequest(PaymentRequest paymentRequest) {
+    public ResponseEntity<Object> processPaymentRequest(PaymentRequest paymentRequest) {
         System.out.println("\n");
         LOG.info("Received a PaymentRequest, posting record into the database...");
 
@@ -76,8 +73,10 @@ public class BusinessLogic {
         accountInfoRequest.setCorrelatorId(paymentRequest.getCorrelatorId());
 
         String accountResponse = userServiceClient.post()
-                .uri(restEndpoints.get(restRouter.get("AccountInfoRequest")))
-                .contentType(MediaType.APPLICATION_JSON).body(accountInfoRequest).retrieve()
+                .uri(restEndpoints.get(userServiceClient))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(accountInfoRequest)
+                .retrieve()
                 .body(String.class);
         LOG.info("Attempting to find information about the account via email...");
 
@@ -121,7 +120,7 @@ public class BusinessLogic {
                 rewardsRequest.setApplication(Application.REWARD_POINTS_REDEEMED);
 
                 String rewardResponse = userServiceClient.post()
-                    .uri(restEndpoints.get(restRouter.get("RewardsRequest")))
+                    .uri(restEndpoints.get(userServiceClient))
                     .contentType(MediaType.APPLICATION_JSON).body(rewardsRequest).retrieve()
                     .body(String.class);
 
