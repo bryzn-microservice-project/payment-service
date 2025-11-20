@@ -147,14 +147,14 @@ public class BusinessLogicTest {
 	}
 
      // Helper method to serialize an object to JSON string
-    private String toJson(Object obj) {
-        try {
-            // Use Jackson ObjectMapper to convert the object to JSON
-            ObjectMapper objectMapper = new ObjectMapper();
-            return objectMapper.writeValueAsString(obj);  // Convert object to JSON string
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-            return "{\"error\":\"Error processing JSON\"}";
-        }
-    }
+     private String toJson(Object obj) {
+          try {
+               // Use Jackson ObjectMapper to convert the object to JSON
+               ObjectMapper objectMapper = new ObjectMapper();
+               return objectMapper.writeValueAsString(obj);  // Convert object to JSON string
+          } catch (JsonProcessingException e) {
+               e.printStackTrace();
+               return "{\"error\":\"Error processing JSON\"}";
+          }
+     }
 }
